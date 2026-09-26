@@ -280,3 +280,50 @@ def select_features_model_based(
         selector,
         selected_features
     )
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.feature_selection import SelectFromModel
+
+
+def select_features_model_based(X, y, threshold="median"):
+    """
+    Select important features using a Random Forest model.
+
+    The selector is fitted only on the training data to avoid
+    data leakage.
+    """
+
+    model = RandomForestClassifier(
+        n_estimators=100,
+        random_state=42,
+        n_jobs=-1,
+        class_weight="balanced"
+    )
+
+    model.fit(X, y)
+
+    selector = SelectFromModel(
+        model,
+        threshold=threshold,
+        prefit=True
+    )
+
+    X_selected = selector.transform(X)
+
+    selected_features = X.columns[
+        selector.get_support()
+    ].tolist()
+
+    print("Features before selection:", X.shape[1])
+    print("Features after selection:", X_selected.shape[1])
+
+    print("\nSelected features:")
+    for feature in selected_features:
+        print(feature)
+
+    X_selected = pd.DataFrame(
+        X_selected,
+        columns=selected_features,
+        index=X.index
+    )
+
+    return X_selected, selector, selected_features
